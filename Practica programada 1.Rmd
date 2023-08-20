@@ -1,0 +1,138 @@
+---
+title: "Practica programada 1"
+author: "Kimberly Matarrita"
+date: "2023-08-20"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(readr)
+library(readxl)
+library(tidyr)# doma de datos
+library(janitor) #limpieza de datos
+library(lubridate)
+```
+
+
+```{r}
+Datos_NETFLIX <- read.csv2("https://raw.githubusercontent.com/isa229/programacion_analisis_datos_ii/main/netflix_info.csv")
+```
+
+b. Ajuste los nombres de las columnas para que estén en español.
+
+```{r}
+Datos_NETFLIX.<- Datos_NETFLIX |> 
+  rename(ID=show_id,
+         TIPO=type,
+         TITULO=title,
+         DIRECTOR=director,
+         PAIS=country,
+         FECHA=date_added,
+         AÑO=release_year,
+         CLASIFICACION=rating,
+         DURACION=duration,
+         GENERO=listed_in)
+```
+
+c. Elimine filas duplicadas
+
+```{r}
+Datos_NETFLIX. <- Datos_NETFLIX. |> 
+  distinct()
+```
+
+d. Elimine filas y columnas vacías.
+```{r}
+Datos_NETFLIX. <- Datos_NETFLIX. |> 
+  remove_empty(which = c("rows", "cols"))
+```
+
+e. Elimine la variable correspondiente al año de lanzamiento (release_year.)
+
+```{r}
+Datos_NETFLIX. <- Datos_NETFLIX. |>
+  select(-AÑO) |>
+  distinct()
+```
+
+f. Haga una inspección de las variables type y country para determinar si hay observaciones mal escritas o
+escritas de diferentes maneras. Si es ahí, haga la limpieza para poder homogenizar esos datos.
+
+```{r}
+Datos_NETFLIX. <- Datos_NETFLIX.  |>
+  mutate(across(c(TIPO), function(x) ifelse(x == "movie", "Movie", x))) |>
+  mutate(across(c(TIPO), function(x) ifelse(x == "tv show", "TV Show", x))) |>
+  mutate(across(c(TIPO), function(x) ifelse(x == "Movi", "Movie", x))) |> 
+  mutate(across(c(TIPO), function(x) ifelse(x == "TV SHOW", "TV Show", x)))
+```
+
+```{r}
+Datos_NETFLIX.<- Datos_NETFLIX.|>
+  mutate(PAIS = ifelse(PAIS == "united states", "United States", PAIS)) |>
+  mutate(PAIS = ifelse(PAIS== "india", "India", PAIS)) |>
+  mutate(PAIS = ifelse(PAIS == "pakistan", "Pakistan", PAIS)) |> 
+  mutate(PAIS = ifelse(PAIS == "canada", "Canada", PAIS)) |> 
+  mutate(PAIS = ifelse(PAIS == "United State", "United States", PAIS))
+```
+
+```{r}
+Datos_pais_tipo. <- Datos_NETFLIX. |>
+  select(PAIS,TIPO)
+```
+
+g. Para todas las columnas de tipo carácter, en donde haya NA, coloque “Sin información”.
+```{r}
+Datos_NETFLIX.<- Datos_NETFLIX. |> 
+  mutate(across(where(is.character), ~ifelse(. == "", "Sin información", .)))
+```
+h.Añada a su conjunto de datos una nueva columna llamada anyo que indique el año en que el show o
+película fue añadido a Netflix. Añada también una columna llamada mes que indique el mes en que el
+show o película fue añadido a Netflix.
+
+```{r}
+Datos <- Datos_NETFLIX. |> 
+  mutate(FECHA = mdy(FECHA))
+```
+
+```{r}
+Datos_NETFLIX. <- Datos_NETFLIX. |> 
+  mutate(FECHA = mdy(FECHA))
+```
+
+```{r}
+Datos_NETFLIX. <- Datos_NETFLIX. |> 
+  mutate(AÑO = year(FECHA)) |> 
+  mutate(MES = month(FECHA))
+```
+
+i. Cuántas películas y shows de TV hay por país?
+
+```{r}
+DIRECTORES_Movie <- Datos_NETFLIX. |> 
+  filter(TIPO != "TV Show") |> 
+  group_by(DIRECTOR) |> 
+  summarise(Conteo = n()) |> 
+  arrange(desc(Conteo)) |> 
+  top_n(10)
+```
+k. Cuáles son los 10 directores con mayor cantidad de shows de TV (sin contar películas) en Netflix?
+Ordénelos por orden descendente.
+
+```{r}
+DIRECTORES_TV <- Datos_NETFLIX. |> 
+  filter(TIPO != "Movie") |> 
+  group_by(DIRECTOR) |> 
+  summarise(Conteo = n()) |> 
+  arrange(desc(Conteo)) |> 
+  top_n(10)
+```
+
+l. Obtenga la lista de películas y shows de TV que se añadieron en marzo del año 2020. Cuántos fueron?
+```{r}
+MARZO_2020 <- Datos_NETFLIX. |> 
+  filter(TIPO %in% c("Movie", "TV Show"), MES == "3", AÑO == 2020) |> 
+  select(TITULO,TIPO,MES,AÑO)
+```
+
